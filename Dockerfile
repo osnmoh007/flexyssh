@@ -8,7 +8,8 @@ RUN apk add --no-cache make python3 g++ openssh-client
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
+# Note: We use npm install instead of npm ci to ensure connect-mongo gets installed
 
 # Copy application code
 COPY . .

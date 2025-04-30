@@ -11,6 +11,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const session = require('express-session');
 const { isAuthenticated, validateCredentials } = require('./middleware/auth');
+const MongoStore = require('connect-mongo');
 
 // Load env vars
 dotenv.config();
@@ -24,20 +25,42 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
+// Trust proxy for Cloudflare and other reverse proxies
+app.set('trust proxy', 1);
+
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Express session middleware
+// Replace the existing session configuration with this
 app.use(session({
   secret: process.env.SESSION_SECRET || 'flexy-ssh-secret',
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: 'sessions'
+  }),
   cookie: { 
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  },
+  proxy: true
 }));
+
+// Add this after the session middleware
+// Simple request logger
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} from ${req.ip} via ${req.headers['x-forwarded-for'] || 'direct'}`);
+  
+  // Check and log authentication status
+  if (req.url !== '/login' && req.url !== '/logout') {
+    console.log(`  Auth status: ${req.session && req.session.authenticated ? 'Authenticated' : 'Not authenticated'}`);
+  }
+  
+  next();
+});
 
 // Setup Handlebars
 app.engine('handlebars', exphbs.engine());
@@ -57,20 +80,51 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
+  console.log('Login attempt received:', { 
+    username: req.body.username,
+    passwordProvided: !!req.body.password,
+    headers: {
+      host: req.headers.host,
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      'x-forwarded-for': req.headers['x-forwarded-for'],
+      'x-forwarded-proto': req.headers['x-forwarded-proto']
+    }
+  });
+  
   const { username, password } = req.body;
   
   if (validateCredentials(username, password)) {
     // Set session as authenticated
     req.session.authenticated = true;
     req.session.username = username;
-    return res.redirect('/');
+    
+    // Log successful authentication
+    console.log('Authentication successful for user:', username);
+    
+    // Save the session explicitly before redirecting
+    req.session.save(err => {
+      if (err) {
+        console.error('Error saving session:', err);
+        return res.status(500).render('login', { 
+          layout: false, 
+          error: 'Session error, please try again' 
+        });
+      }
+      
+      console.log('Session saved successfully, redirecting to home');
+      return res.redirect('/');
+    });
+  } else {
+    // Log failed authentication
+    console.log('Authentication failed for user:', username);
+    
+    // Show error if credentials are incorrect
+    res.render('login', { 
+      layout: false, 
+      error: 'Invalid username or password. Please try again.' 
+    });
   }
-  
-  // Show error if credentials are incorrect
-  res.render('login', { 
-    layout: false, 
-    error: 'Invalid username or password. Please try again.' 
-  });
 });
 
 app.get('/logout', (req, res) => {
@@ -139,6 +193,10 @@ app.post('/api/keys', isAuthenticated, (req, res) => {
 
 // WebSocket handling with authentication check
 wss.on('connection', (ws, req) => {
+    // Log connection details to help debug
+    console.log('WebSocket connection attempt from origin:', req.headers.origin);
+    console.log('Connection headers:', req.headers);
+    
     // Get the session cookie from the request
     const cookie = req.headers.cookie;
     
