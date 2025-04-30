@@ -1,0 +1,257 @@
+<div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>FlexySSH</h2>
+            <div class="sidebar-buttons">
+                <button type="button" id="addServerBtn" class="icon-btn add-server-btn" title="Add Server">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button type="button" id="addFolderBtn" class="icon-btn add-folder-btn" title="Add Folder">
+                    <i class="fas fa-folder-plus"></i>
+                </button>
+                <button type="button" id="manageIdentitiesBtn" class="icon-btn manage-identities-btn" title="Manage Identities">
+                    <i class="fas fa-user-shield"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="server-list-container">
+            <div class="server-list" id="serverList">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-buttons">
+                <button type="button" id="refreshBtn" class="refresh-btn">Refresh</button>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <div class="tab-list" id="tabList">
+                <!-- Tabs will be added here dynamically -->
+            </div>
+            <button id="closeAllTabsBtn" class="close-all-tabs-btn" title="Close All Tabs">
+                <span>×</span>
+            </button>
+        </div>
+        
+        <!-- Terminal Container -->
+        <div class="terminal-toolbar" id="terminalToolbar">
+            <div class="terminal-toolbar-left">
+                <span class="terminal-title" id="currentTerminalTitle">Terminal</span>
+            </div>
+            <div class="terminal-toolbar-right">
+                <button type="button" id="fullscreenBtn" class="terminal-toolbar-btn" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+        <div class="terminal-container" id="terminalContainer">
+            <!-- Terminal tabs will be added here dynamically -->
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-content">
+                    <h2>Welcome to FlexySSH</h2>
+                    <p>Select a server from the sidebar to open a new connection tab.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Server Modal -->
+    <div id="saveServerModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Server</h2>
+            <form id="saveServerForm">
+                <div class="form-group">
+                    <label for="serverName">Server Name</label>
+                    <input type="text" id="serverName" required>
+                </div>
+                <div class="form-group">
+                    <label for="folderSelector">Folder (Optional)</label>
+                    <select id="folderSelector">
+                        <option value="">- No Folder -</option>
+                        <!-- Folders will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="serverHost">Host</label>
+                    <input type="text" id="serverHost" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>User Identity</label>
+                    <div class="identity-options">
+                        <div class="identity-selection">
+                            <select id="identitySelector">
+                                <option value="manual">Enter Manually</option>
+                                <!-- Identities will be loaded here -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="manualIdentitySection">
+                    <div class="form-group">
+                        <label for="serverUsername">Username</label>
+                        <input type="text" id="serverUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Authentication Method</label>
+                        <div class="auth-options">
+                            <label class="radio-label">
+                                <input type="radio" name="authType" value="password" id="authTypePassword" checked>
+                                Password
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="authType" value="key" id="authTypeKey">
+                                SSH Key
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group auth-section" id="passwordSection">
+                        <label for="serverPassword">Password</label>
+                        <input type="password" id="serverPassword">
+                    </div>
+                    <div class="form-group auth-section" id="keySection" style="display: none;">
+                        <label for="privateKey">Private Key</label>
+                        <div class="key-input-container">
+                            <div class="key-upload-section">
+                                <label class="file-upload-label">
+                                    <input type="file" id="keyFileInput" class="key-file-input">
+                                    <span class="upload-button"><i class="fas fa-upload"></i> Choose Key File</span>
+                                </label>
+                                <span id="selectedFileName" class="selected-file-name">No file selected</span>
+                            </div>
+                            <div class="divider">
+                                <span>OR</span>
+                            </div>
+                            <textarea id="privateKey" rows="4" placeholder="Paste your private key here"></textarea>
+                        </div>
+                        <div class="sub-form-group">
+                            <label for="keyPassphrase">Key Passphrase (if needed)</label>
+                            <input type="password" id="keyPassphrase">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="serverPort">Port</label>
+                    <input type="number" id="serverPort" value="22" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Save</button>
+                    <button type="button" id="cancelSave">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Manage Identities Modal -->
+    <div id="identitiesModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Manage Identities</h2>
+            <div class="identities-container">
+                <div class="identities-list-header">
+                    <h3>Saved Identities</h3>
+                    <button type="button" id="addIdentityBtn" class="add-identity-btn">+ Add Identity</button>
+                </div>
+                <div class="identities-list" id="identitiesList">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Identity Modal -->
+    <div id="identityFormModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="identityFormTitle">Add Identity</h2>
+            <form id="identityForm">
+                <input type="hidden" id="identityId">
+                <div class="form-group">
+                    <label for="identityName">Identity Name</label>
+                    <input type="text" id="identityName" required>
+                </div>
+                <div class="form-group">
+                    <label for="identityUsername">Username</label>
+                    <input type="text" id="identityUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Authentication Method</label>
+                    <div class="auth-options">
+                        <label class="radio-label">
+                            <input type="radio" name="identityAuthType" value="password" id="identityAuthTypePassword" checked>
+                            Password
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="identityAuthType" value="key" id="identityAuthTypeKey">
+                            SSH Key
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group auth-section" id="identityPasswordSection">
+                    <label for="identityPassword">Password</label>
+                    <input type="password" id="identityPassword">
+                </div>
+                <div class="form-group auth-section" id="identityKeySection" style="display: none;">
+                    <label for="identityPrivateKey">Private Key</label>
+                    <div class="key-input-container">
+                        <div class="key-upload-section">
+                            <label class="file-upload-label">
+                                <input type="file" id="identityKeyFileInput" class="key-file-input">
+                                <span class="upload-button"><i class="fas fa-upload"></i> Choose Key File</span>
+                            </label>
+                            <span id="identitySelectedFileName" class="selected-file-name">No file selected</span>
+                        </div>
+                        <div class="divider">
+                            <span>OR</span>
+                        </div>
+                        <textarea id="identityPrivateKey" rows="4" placeholder="Paste your private key here"></textarea>
+                    </div>
+                    <div class="sub-form-group">
+                        <label for="identityKeyPassphrase">Key Passphrase (if needed)</label>
+                        <input type="password" id="identityKeyPassphrase">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Save</button>
+                    <button type="button" id="cancelIdentity">Cancel</button>
+                    <button type="button" id="deleteIdentity" class="danger-button" style="display: none;">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Folder Modal -->
+    <div id="folderModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Folder</h2>
+            <form id="folderForm">
+                <div class="form-group">
+                    <label for="folderName">Folder Name</label>
+                    <input type="text" id="folderName" required>
+                </div>
+                <div class="form-group">
+                    <label for="folderColor">Folder Color (optional)</label>
+                    <input type="color" id="folderColor" value="#007acc">
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Save</button>
+                    <button type="button" id="cancelFolder">Cancel</button>
+                    <button type="button" id="deleteFolder" class="danger-button" style="display: none;">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

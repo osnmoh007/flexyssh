@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexySSH - Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background-color: #252526;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .login-header p {
+            color: #aaa;
+            font-size: 15px;
+        }
+        
+        .error-message {
+            background-color: rgba(244, 67, 54, 0.1);
+            border-left: 3px solid #f44336;
+            color: #f44336;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>FlexySSH</h1>
+            <p>Please login to access your SSH dashboard</p>
+        </div>
+        
+        {{#if error}}
+        <div class="error-message">
+            <i class="fas fa-exclamation-circle"></i> {{error}}
+        </div>
+        {{/if}}
+        
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html> 
