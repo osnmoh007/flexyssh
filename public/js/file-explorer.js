@@ -12,7 +12,9 @@ const FileExplorerManager = {
         this.currentPathDisplay = document.getElementById('currentPath');
         this.fileBreadcrumb = document.getElementById('fileBreadcrumb');
         this.refreshFilesBtn = document.getElementById('refreshFilesBtn');
+        this.newFileBtn = document.getElementById('newFileBtn');
         this.fileExplorerStatus = document.getElementById('fileExplorerStatus');
+        this.newFileModal = document.getElementById('newFileModal');
         
         // Skip initialization if elements don't exist
         if (!this.fileExplorerBtn || !this.fileExplorerModal) return;
@@ -29,10 +31,46 @@ const FileExplorerManager = {
         this.fileExplorerBtn.addEventListener('click', this.openFileExplorer.bind(this));
         this.refreshFilesBtn.addEventListener('click', this.refreshCurrentDirectory.bind(this));
         
+        // New File button click handler
+        if (this.newFileBtn) {
+            this.newFileBtn.addEventListener('click', this.openNewFileModal.bind(this));
+        }
+        
+        // Set up the new file modal
+        if (this.newFileModal) {
+            // Close button for new file modal
+            const newFileCloseBtn = this.newFileModal.querySelector('.close');
+            if (newFileCloseBtn) {
+                newFileCloseBtn.addEventListener('click', () => {
+                    this.newFileModal.style.display = 'none';
+                });
+            }
+            
+            // Cancel button for new file modal
+            const cancelNewFileBtn = document.getElementById('cancelNewFile');
+            if (cancelNewFileBtn) {
+                cancelNewFileBtn.addEventListener('click', () => {
+                    this.newFileModal.style.display = 'none';
+                });
+            }
+            
+            // Form submission for new file
+            const newFileForm = document.getElementById('newFileForm');
+            if (newFileForm) {
+                newFileForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.createNewFile();
+                });
+            }
+        }
+        
         // Close modal when clicking outside
         window.addEventListener('click', (e) => {
             if (e.target === this.fileExplorerModal) {
                 this.fileExplorerModal.style.display = 'none';
+            }
+            if (this.newFileModal && e.target === this.newFileModal) {
+                this.newFileModal.style.display = 'none';
             }
         });
         
@@ -731,10 +769,10 @@ const FileExplorerManager = {
     
     editFile: function(file) {
         // Check if the file is a text/code file that can be edited
-        if (!this.isEditableFile(file.name)) {
+       /* if (!this.isEditableFile(file.name)) {
             alert('This file type is not supported for editing. Only text-based files can be edited.');
             return;
-        }
+        }*/
         
         // Show loading status
         this.updateStatus(`Loading file for editing: ${file.name}...`);
@@ -784,7 +822,7 @@ const FileExplorerManager = {
             // Code files
             '.js', '.jsx', '.ts', '.tsx', '.html', '.htm', '.css', '.scss', '.less',
             '.php', '.py', '.rb', '.java', '.c', '.cpp', '.h', '.cs', '.go', '.rs',
-            '.swift', '.kt', '.kts', '.sh', '.bash', '.zsh', '.ps1',
+            '.swift', '.kt', '.kts', '.sh', '.bash', '.zsh', '.ps1', '*',
             
             // Config files
             '.json', '.xml', '.yaml', '.yml', '.toml', '.ini', '.conf', '.config',
@@ -822,7 +860,71 @@ const FileExplorerManager = {
         return false;
     },
     
-    openCodeEditorModal: function(file, content) {
+    openNewFileModal: function() {
+        // Check if we have an active server connection
+        if (!this.activeServerId) {
+            const activeTab = window.terminalManager?.getActiveTab();
+            if (activeTab && activeTab.serverId) {
+                this.activeServerId = activeTab.serverId;
+            } else {
+                alert('Please connect to a server first');
+                return;
+            }
+        }
+        
+        // Clear the form fields
+        const newFileNameInput = document.getElementById('newFileName');
+        const newFileContentInput = document.getElementById('newFileContent');
+        
+        if (newFileNameInput) newFileNameInput.value = '';
+        if (newFileContentInput) newFileContentInput.value = '';
+        
+        // Show the modal
+        if (this.newFileModal) {
+            this.newFileModal.style.display = 'block';
+        }
+    },
+    
+    createNewFile: function() {
+        const fileName = document.getElementById('newFileName').value.trim();
+        const fileContent = document.getElementById('newFileContent').value;
+        
+        if (!fileName) {
+            alert('Please enter a file name');
+            return;
+        }
+        
+        // Construct the full file path
+        const filePath = this.currentPath + (this.currentPath.endsWith('/') ? '' : '/') + fileName;
+        
+        // Create a file object for the new file
+        const newFile = {
+            name: fileName,
+            path: filePath,
+            isDirectory: false,
+            size: fileContent.length.toString()
+        };
+        
+        // Open the code editor modal with the new file
+        this.openCodeEditorModal(newFile, fileContent, true);
+        
+        // Hide the new file modal
+        this.newFileModal.style.display = 'none';
+    },
+    
+    openCodeEditorModal: function(file, content, isNewFile = false) {
+        // Ensure we have a server ID for this file
+        if (!this.activeServerId) {
+            const activeTab = window.terminalManager?.getActiveTab();
+            if (activeTab && activeTab.serverId) {
+                this.activeServerId = activeTab.serverId;
+            } else {
+                console.error('Cannot edit file: No active server connection');
+                alert('Please connect to a server first');
+                return;
+            }
+        }
+        
         // Check if the code editor modal exists, create it if not
         let codeEditorModal = document.getElementById('codeEditorModal');
         
@@ -833,10 +935,21 @@ const FileExplorerManager = {
             codeEditorModal.className = 'modal';
             
             // Create the modal content
+            let editFilePathHtml = '';
+            if (isNewFile) {
+                editFilePathHtml = `
+                    <div class="editor-file-path-container">
+                        <input type="text" id="editorFilePathInput" value="${file.path}" class="editor-file-path-input" />
+                    </div>
+                `;
+            } else {
+                editFilePathHtml = `<div class="editor-file-path" id="editorFilePath"></div>`;
+            }
+            
             codeEditorModal.innerHTML = `
                 <div class="modal-content code-editor-modal">
                     <div class="code-editor-header">
-                        <div class="editor-file-path" id="editorFilePath"></div>
+                        ${editFilePathHtml}
                         <div class="code-editor-actions">
                             <button id="saveCodeBtn" class="code-editor-btn save-btn">
                                 <i class="fas fa-save"></i> Save
@@ -867,19 +980,74 @@ const FileExplorerManager = {
                 }
             });
             
-            // Set up save button
+            // Set up save button - binding to this is crucial
             const saveCodeBtn = document.getElementById('saveCodeBtn');
-            saveCodeBtn.addEventListener('click', () => {
-                this.saveFile();
+            
+            const self = this; // Store reference to this for use in the event handler
+            saveCodeBtn.addEventListener('click', function() {
+                self.saveFile(isNewFile);
+            });
+        } else {
+            // Update the modal for new or existing file
+            let editorFilePath = document.getElementById('editorFilePath');
+            let editorFilePathInput = document.getElementById('editorFilePathInput');
+            
+            // Remove existing elements
+            if (editorFilePath) {
+                editorFilePath.parentNode.removeChild(editorFilePath);
+            }
+            if (editorFilePathInput) {
+                editorFilePathInput.parentNode.removeChild(editorFilePathInput);
+            }
+            
+            // Create the appropriate element
+            const headerContainer = codeEditorModal.querySelector('.code-editor-header');
+            if (headerContainer) {
+                if (isNewFile) {
+                    // Create input for new file
+                    const pathContainer = document.createElement('div');
+                    pathContainer.className = 'editor-file-path-container';
+                    pathContainer.innerHTML = `<input type="text" id="editorFilePathInput" value="${file.path}" class="editor-file-path-input" />`;
+                    headerContainer.insertBefore(pathContainer, headerContainer.firstChild);
+                } else {
+                    // Create display for existing file
+                    const pathDisplay = document.createElement('div');
+                    pathDisplay.className = 'editor-file-path';
+                    pathDisplay.id = 'editorFilePath';
+                    headerContainer.insertBefore(pathDisplay, headerContainer.firstChild);
+                }
+            }
+            
+            // Ensure the save button has an event listener
+            const saveCodeBtn = document.getElementById('saveCodeBtn');
+            
+            // Remove existing listeners to avoid duplicates
+            const newSaveBtn = saveCodeBtn.cloneNode(true);
+            saveCodeBtn.parentNode.replaceChild(newSaveBtn, saveCodeBtn);
+            
+            // Add the listener again
+            const self = this;
+            newSaveBtn.addEventListener('click', function() {
+                self.saveFile(isNewFile);
             });
         }
         
-        // Set the file path in the header
-        const editorFilePath = document.getElementById('editorFilePath');
-        editorFilePath.textContent = file.path;
+        // Set the file path in the header or populate the input field
+        if (isNewFile) {
+            const editorFilePathInput = document.getElementById('editorFilePathInput');
+            if (editorFilePathInput) {
+                editorFilePathInput.value = file.path;
+            }
+        } else {
+            const editorFilePath = document.getElementById('editorFilePath');
+            if (editorFilePath) {
+                editorFilePath.textContent = file.path;
+            }
+        }
         
         // Store the current file info for saving
         this.currentEditingFile = file;
+        this.isNewFile = isNewFile;
         
         // Set the content in the textarea
         const codeEditorTextarea = document.getElementById('codeEditorTextarea');
@@ -893,9 +1061,10 @@ const FileExplorerManager = {
         codeEditorModal.style.display = 'block';
     },
     
-    saveFile: function() {
+    saveFile: function(isNewFile) {
         // Get the current file being edited
         if (!this.currentEditingFile) {
+            console.error('No file is currently being edited');
             return;
         }
         
@@ -903,15 +1072,41 @@ const FileExplorerManager = {
         const codeEditorTextarea = document.getElementById('codeEditorTextarea');
         const content = codeEditorTextarea.value;
         
+        // Get the file path - for new files, get it from the input field
+        let filePath = this.currentEditingFile.path;
+        if (isNewFile || this.isNewFile) {
+            const editorFilePathInput = document.getElementById('editorFilePathInput');
+            if (editorFilePathInput) {
+                filePath = editorFilePathInput.value.trim();
+                
+                if (!filePath) {
+                    alert('Please enter a valid file path');
+                    return;
+                }
+                
+                // Update the current editing file path
+                this.currentEditingFile.path = filePath;
+            }
+        }
+        
         // Show saving status
         const editorStatus = document.getElementById('editorStatus');
         editorStatus.textContent = 'Saving...';
         
-        // Get the server ID
-        const serverId = this.activeServerId;
+        // Get the server ID - ensure it's set by checking active terminal if needed
+        let serverId = this.activeServerId;
+        
         if (!serverId) {
-            editorStatus.textContent = 'Error: No active server connection';
-            return;
+            const activeTab = window.terminalManager?.getActiveTab();
+            
+            if (activeTab && activeTab.serverId) {
+                serverId = activeTab.serverId;
+                this.activeServerId = serverId; // Update for future use
+            } else {
+                console.error('No active server connection found');
+                editorStatus.textContent = 'Error: No active server connection';
+                return;
+            }
         }
         
         // Send the updated content to the server
@@ -922,13 +1117,35 @@ const FileExplorerManager = {
             },
             body: JSON.stringify({
                 serverId: serverId,
-                filePath: this.currentEditingFile.path,
+                filePath: filePath,
                 content: content
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
+                // If this was a new file, refresh the directory to show it
+                if (isNewFile || this.isNewFile) {
+                    this.refreshCurrentDirectory();
+                    // No longer a new file after saving
+                    this.isNewFile = false;
+                    
+                    // Update the path display to input field
+                    const headerContainer = document.querySelector('.code-editor-header');
+                    if (headerContainer) {
+                        const pathContainer = headerContainer.querySelector('.editor-file-path-container');
+                        if (pathContainer) {
+                            const pathDisplay = document.createElement('div');
+                            pathDisplay.className = 'editor-file-path';
+                            pathDisplay.id = 'editorFilePath';
+                            pathDisplay.textContent = filePath;
+                            headerContainer.replaceChild(pathDisplay, pathContainer);
+                        }
+                    }
+                }
+                
                 editorStatus.textContent = 'File saved successfully';
                 // Clear the status after a delay
                 setTimeout(() => {
@@ -939,6 +1156,7 @@ const FileExplorerManager = {
             }
         })
         .catch(error => {
+            console.error('Save error:', error);
             editorStatus.textContent = `Error: ${error.message}`;
         });
     }

@@ -24,6 +24,10 @@ class TerminalManager {
         this.savedServers = [];
         this.activeServerId = null;
         this.editingServerId = null;
+        
+        // Keep-alive settings
+        this.keepAliveInterval = 30000; // 30 seconds
+        this.keepAliveTimers = new Map(); // Store timers by tab ID
 
         // Initialize after DOM is fully loaded
         if (document.readyState === 'loading') {
@@ -1152,6 +1156,9 @@ class TerminalManager {
                 
                 tab.term.writeln('Establishing SSH connection...');
                 tab.term.writeln(''); // Add some space
+                
+                // Start the keep-alive timer for this tab
+                this.startKeepAlive(tab.id);
             };
             
             ws.onmessage = (event) => {
@@ -1177,8 +1184,13 @@ class TerminalManager {
                     } else if (data.type === 'disconnect') {
                         tab.term.writeln('\r\n\x1b[33mDisconnected: ' + data.reason + '\x1b[0m');
                         tab.connected = false;
+                        // Stop the keep-alive timer
+                        this.stopKeepAlive(tab.id);
                         // Show reconnect button or message
                         this.showReconnectOption(tab);
+                    } else if (data.type === 'keep-alive-response') {
+                        // Handle the keep-alive response (just log it)
+                        console.debug('Keep-alive response received for tab', tab.id);
                     }
                 } catch (parseError) {
                     console.error('Failed to parse WebSocket message:', parseError);
@@ -1190,6 +1202,8 @@ class TerminalManager {
                 console.error('WebSocket error:', error);
                 tab.term.writeln('\r\n\x1b[31mConnection error. Please check your network connection and try again.\x1b[0m');
                 tab.connected = false;
+                // Stop the keep-alive timer
+                this.stopKeepAlive(tab.id);
                 this.showReconnectOption(tab);
             };
             
@@ -1201,6 +1215,8 @@ class TerminalManager {
                     }
                 }
                 tab.connected = false;
+                // Stop the keep-alive timer
+                this.stopKeepAlive(tab.id);
                 this.showReconnectOption(tab);
             };
         } catch (error) {
@@ -1272,6 +1288,9 @@ class TerminalManager {
         if (tabIndex === -1) return;
         
         const tab = this.tabs[tabIndex];
+        
+        // Stop keep-alive for this tab
+        this.stopKeepAlive(tabId);
         
         // Close the WebSocket connection if open
         if (tab.ws) {
@@ -1394,6 +1413,39 @@ class TerminalManager {
         const toolbar = document.getElementById('terminalToolbar');
         if (toolbar) {
             toolbar.classList.remove('visible');
+        }
+    }
+
+    // Method to start a keep-alive timer for a specific tab
+    startKeepAlive(tabId) {
+        // Clear any existing timer for this tab
+        this.stopKeepAlive(tabId);
+        
+        // Create a new timer that sends keep-alive messages
+        const timer = setInterval(() => {
+            const tab = this.tabs.find(t => t.id === tabId);
+            if (tab && tab.ws && tab.ws.readyState === WebSocket.OPEN && tab.connected) {
+                // Send a keep-alive message to prevent timeout
+                tab.ws.send(JSON.stringify({
+                    type: 'keep-alive'
+                }));
+                console.debug('Keep-alive sent for tab', tabId);
+            } else {
+                // If the tab or WebSocket is not available anymore, stop the timer
+                this.stopKeepAlive(tabId);
+            }
+        }, this.keepAliveInterval);
+        
+        // Store the timer reference
+        this.keepAliveTimers.set(tabId, timer);
+    }
+    
+    // Method to stop the keep-alive timer for a specific tab
+    stopKeepAlive(tabId) {
+        if (this.keepAliveTimers.has(tabId)) {
+            clearInterval(this.keepAliveTimers.get(tabId));
+            this.keepAliveTimers.delete(tabId);
+            console.debug('Keep-alive stopped for tab', tabId);
         }
     }
 }

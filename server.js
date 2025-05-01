@@ -212,12 +212,10 @@ wss.on('connection', (ws, req) => {
 
     ws.on('message', (message) => {
         try {
-            console.log('Raw WebSocket message received:', message.toString());
             const data = JSON.parse(message);
             
             // Only log connection and resize events, not every keystroke
             if (data.type !== 'input') {
-                console.log('Message type:', data.type);
                 if (data.type === 'connect_saved') {
                     console.log('Server ID:', data.serverId);
                 } else if (data.type === 'connect') {
@@ -486,6 +484,28 @@ wss.on('connection', (ws, req) => {
                     if (ws.ptyProcess) {
                         console.log(`Resizing terminal to ${data.cols}x${data.rows}`);
                         ws.ptyProcess.resize(data.cols, data.rows);
+                    }
+                    break;
+
+                case 'keep-alive':
+                    // Process keep-alive message from client
+                    console.debug('Keep-alive received');
+                    
+                    // Send a keep-alive message back
+                    ws.send(JSON.stringify({ 
+                        type: 'keep-alive-response',
+                        timestamp: Date.now()
+                    }));
+                    
+                    // If we have a running PTY process, send a blank command to keep it alive
+                    if (ptyProcess && !ptyProcess.killed) {
+                        try {
+                            // A carriage return followed by a backspace to clear it
+                            // Won't be visible to the user but keeps connection active
+                            ptyProcess.write('\r\b');
+                        } catch (err) {
+                            console.error('Error sending keep-alive to pty process:', err);
+                        }
                     }
                     break;
             }
