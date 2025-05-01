@@ -1,0 +1,219 @@
+/* Snippets Modal Styles */
+.snippets-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.snippets-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.snippets-list-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #e0e0e0;
+}
+
+.add-snippet-btn {
+    background-color: #2c7d32;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.add-snippet-btn:hover {
+    background-color: #3c8c42;
+}
+
+.snippets-list {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #1e1e1e;
+    max-height: 400px;
+}
+
+.snippet-item {
+    padding: 12px;
+    border-bottom: 1px solid #383838;
+    margin-bottom: 8px;
+    background-color: #252526;
+    border-radius: 4px;
+}
+
+.snippet-item:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.snippet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.snippet-header h4 {
+    margin: 0;
+    font-size: 15px;
+    color: #e0e0e0;
+}
+
+.snippet-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.snippet-actions button {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.use-snippet-btn:hover {
+    color: #4caf50;
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.edit-snippet-btn:hover {
+    color: #2196f3;
+    background-color: rgba(33, 150, 243, 0.1);
+}
+
+.snippet-description {
+    font-size: 13px;
+    color: #aaa;
+    line-height: 1.4;
+    margin-top: 8px;
+}
+
+.empty-message {
+    text-align: center;
+    padding: 20px;
+    color: #777;
+    font-style: italic;
+}
+
+/* Snippet Form */
+#snippetContent {
+    font-family: 'Courier New', monospace;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    padding: 10px;
+    resize: vertical;
+    font-size: 14px;
+}
+
+/* Loading and Error Indicators */
+.snippets-list .loading,
+.snippets-list .error-message {
+    padding: 20px;
+    text-align: center;
+}
+
+.snippets-list .error-message {
+    color: #f44336;
+}
+
+/* Snippets button in sidebar */
+.icon-btn.snippets-btn {
+    background-color: #5d4db3;
+    color: white;
+}
+
+.icon-btn.snippets-btn:hover {
+    background-color: #4a3b9a;
+}
+
+/* Terminal toolbar snippets dropdown */
+.terminal-snippets-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.terminal-snippets-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: #252526;
+    min-width: 250px;
+    max-width: 350px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    border-radius: 4px;
+    border: 1px solid #3c3c3c;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.terminal-snippets-dropdown:hover .terminal-snippets-content,
+.terminal-snippets-content.active {
+    display: block;
+}
+
+.terminal-snippet-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.terminal-snippet-item:hover {
+    background-color: #2a2a2a;
+}
+
+.terminal-snippet-item:last-child {
+    border-bottom: none;
+}
+
+.terminal-snippet-name {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 4px;
+    padding-right: 20px;
+}
+
+.terminal-snippet-description {
+    font-size: 11px;
+    color: #aaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.loading-snippets {
+    padding: 12px;
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+    font-size: 12px;
+}
+
+.empty-terminal-snippets {
+    padding: 12px;
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+    font-size: 12px;
+}
+
+.terminal-toolbar-btn[title="Use Snippets"] {
+    color: #64b5f6;
+} 

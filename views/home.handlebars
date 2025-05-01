@@ -7,6 +7,9 @@
                 <button type="button" id="addServerBtn" class="icon-btn add-server-btn" title="Add Server">
                     <i class="fas fa-plus"></i>
                 </button>
+                <button type="button" id="snippetsBtn" class="icon-btn snippets-btn" title="Code Snippets">
+                    <i class="fas fa-code"></i>
+                </button>
                 <button type="button" id="addFolderBtn" class="icon-btn add-folder-btn" title="Add Folder">
                     <i class="fas fa-folder-plus"></i>
                 </button>
@@ -48,6 +51,18 @@
                 <span class="terminal-title" id="currentTerminalTitle">Terminal</span>
             </div>
             <div class="terminal-toolbar-right">
+                <div class="terminal-snippets-dropdown">
+                    <button type="button" id="terminalSnippetsBtn" class="terminal-toolbar-btn" title="Use Snippets">
+                        <i class="fas fa-code"></i>
+                    </button>
+                    <div class="terminal-snippets-content" id="terminalSnippetsContent">
+                        <!-- Snippets will be loaded here dynamically -->
+                        <div class="loading-snippets">Loading snippets...</div>
+                    </div>
+                </div>
+                <button type="button" id="fileExplorerBtn" class="terminal-toolbar-btn" title="File Explorer">
+                    <i class="fas fa-folder"></i>
+                </button>
                 <button type="button" id="fullscreenBtn" class="terminal-toolbar-btn" title="Toggle Fullscreen">
                     <i class="fas fa-expand"></i>
                 </button>
@@ -254,4 +269,146 @@
             </form>
         </div>
     </div>
-</div> 
+
+    <!-- Snippets Modal -->
+    <div id="snippetsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Code Snippets</h2>
+            <div class="snippets-container">
+                <div class="snippets-list-header">
+                    <h3>Saved Snippets</h3>
+                    <button type="button" id="addSnippetBtn" class="add-snippet-btn">+ Add Snippet</button>
+                </div>
+                <div class="snippets-list" id="snippetsList">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Explorer Modal -->
+    <div id="fileExplorerModal" class="modal">
+        <div class="modal-content file-explorer-modal">
+            <span class="close">&times;</span>
+            <h2>File Explorer</h2>
+            <div class="file-explorer-container">
+                <div class="file-explorer-header">
+                    <div class="file-explorer-path" id="currentPath">/</div>
+                    <div class="file-explorer-actions">
+                        <button type="button" id="uploadFileBtn" class="file-explorer-btn" title="Upload File">
+                            <i class="fas fa-upload"></i>
+                        </button>
+                        <button type="button" id="refreshFilesBtn" class="file-explorer-btn" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="file-explorer-breadcrumb" id="fileBreadcrumb">
+                    <span class="breadcrumb-item root" data-path="/">/</span>
+                </div>
+                <div class="file-explorer-content" id="fileExplorerContent">
+                    <div class="loading">Connecting to server...</div>
+                </div>
+                <div class="file-explorer-status" id="fileExplorerStatus">
+                    Ready
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Snippet Modal -->
+    <div id="snippetFormModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="snippetFormTitle">Add Snippet</h2>
+            <form id="snippetForm">
+                <input type="hidden" id="snippetId">
+                <div class="form-group">
+                    <label for="snippetName">Snippet Name</label>
+                    <input type="text" id="snippetName" required>
+                </div>
+                <div class="form-group">
+                    <label for="snippetContent">Content</label>
+                    <textarea id="snippetContent" rows="8" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="snippetDescription">Description (optional)</label>
+                    <textarea id="snippetDescription" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Save</button>
+                    <button type="button" id="cancelSnippet">Cancel</button>
+                    <button type="button" id="deleteSnippet" class="danger-button" style="display: none;">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- File Upload Modal -->
+    <div id="fileUploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Upload File</h2>
+            <form id="fileUploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="uploadDestination">Upload to:</label>
+                    <input type="text" id="uploadDestination" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="fileToUpload">Select File:</label>
+                    <div class="file-upload-container">
+                        <label class="file-upload-label">
+                            <input type="file" id="fileToUpload" class="file-upload-input" required>
+                            <span class="upload-button"><i class="fas fa-file"></i> Choose File</span>
+                        </label>
+                        <span id="selectedUploadFileName" class="selected-file-name">No file selected</span>
+                    </div>
+                </div>
+                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+                <div id="uploadError" class="error-message" style="display: none;"></div>
+                <div class="form-actions">
+                    <button type="submit" id="startUploadBtn">Upload</button>
+                    <button type="button" id="cancelUpload">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Code Editor Modal -->
+    <div id="codeEditorModal" class="modal">
+        <div class="modal-content code-editor-modal">
+            <div class="code-editor-header">
+                <div class="editor-file-path" id="editorFilePath"></div>
+                <div class="code-editor-actions">
+                    <button id="saveCodeBtn" class="code-editor-btn save-btn">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <span class="close">&times;</span>
+                </div>
+            </div>
+            <div class="code-editor-container">
+                <textarea id="codeEditorTextarea"></textarea>
+            </div>
+            <div id="editorStatus" class="editor-status"></div>
+        </div>
+    </div>
+    
+    <!-- Hidden file input for temporary use -->
+    <input type="file" id="hiddenFileInput" style="display: none;">
+</div>
+
+<script src="/js/server-manager.js"></script>
+<script src="/js/terminal-manager.js"></script>
+<script src="/js/folder-manager.js"></script>
+<script src="/js/identity-manager.js"></script>
+<script src="/js/file-explorer.js"></script>
+<script src="/js/file-upload.js"></script>
+<script src="/js/snippets-manager.js"></script>
+</body>
+</html> 

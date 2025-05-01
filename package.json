@@ -1,6 +1,6 @@
 {
   "name": "flexyssh",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A web-based SSH client",
   "main": "server.js",
   "scripts": {
@@ -14,6 +14,7 @@
     "express-handlebars": "^7.1.2",
     "express-session": "^1.18.1",
     "mongoose": "^8.14.0",
+    "multer": "^1.4.5-lts.2",
     "node-pty": "^1.0.0",
     "ws": "^8.16.0"
   },

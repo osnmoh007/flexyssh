@@ -1320,6 +1320,12 @@ class TerminalManager {
         return this.tabs.find(tab => tab.id === this.activeTabId);
     }
     
+    // Method to get a tab's WebSocket connection by tab ID
+    getTabWebSocket(tabId) {
+        const tab = this.tabs.find(tab => tab.id === tabId);
+        return tab?.ws || null;
+    }
+    
     sendResize(tab) {
         if (tab && tab.ws && tab.ws.readyState === WebSocket.OPEN && tab.term) {
             tab.ws.send(JSON.stringify({
@@ -1401,5 +1407,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Create the terminal manager and make it globally accessible
-    window.terminalManager = new TerminalManager();
+    const terminalManager = new TerminalManager();
+    
+    // Make it globally accessible for other scripts
+    window.terminalManager = terminalManager;
 }); 

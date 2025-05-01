@@ -146,6 +146,8 @@ app.get('/', isAuthenticated, (req, res) => {
 app.use('/api/servers', isAuthenticated, require('./routes/servers'));
 app.use('/api/identities', isAuthenticated, require('./routes/identities'));
 app.use('/api/folders', isAuthenticated, require('./routes/folders'));
+app.use('/api/snippets', isAuthenticated, require('./routes/snippets'));
+app.use('/api/files', isAuthenticated, require('./routes/files'));
 
 // Add this function after the existing imports but before the app setup
 // Function to ensure the SSH keys directory exists
@@ -685,7 +687,35 @@ function connectToServer(server, ws) {
 }
 
 const PORT = process.env.PORT || 3002;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Open http://localhost:${PORT} in your browser`);
+    
+    // Check for sshpass availability
+    try {
+        const filesRouter = require('./routes/files');
+        const getSshpassPath = filesRouter.getSshpassPath;
+        const getExpectPath = filesRouter.getExpectPath;
+        
+        if (typeof getSshpassPath === 'function') {
+            const sshpassPath = await getSshpassPath();
+            if (sshpassPath) {
+                console.log(`Found sshpass at: ${sshpassPath}`);
+            } else {
+                console.warn('Warning: sshpass not found. Checking for expect as fallback...');
+                
+                if (typeof getExpectPath === 'function') {
+                    const expectPath = await getExpectPath();
+                    if (expectPath) {
+                        console.log(`Found expect at: ${expectPath} (will be used as fallback for password authentication)`);
+                    } else {
+                        console.warn('Warning: Neither sshpass nor expect found. Password authentication for file operations may not work correctly.');
+                        console.warn('Install sshpass or expect for better password authentication support.');
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('Could not check for sshpass/expect:', err.message);
+    }
 }); 
